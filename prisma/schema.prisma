@@ -8,49 +8,52 @@ datasource db {
 }
 
 model User {
-  id              String     @id @default(cuid())
-  username        String     @unique
-  name            String
-  passwordHash    String
-  role            String     @default("CHILDREN")
-  dailySugarLimit Float      @default(25.0)
-  avatarColor     String     @default("#00B4A6")
-  parentId        String?
-  parent          User?      @relation("ParentChildren", fields: [parentId], references: [id], onDelete: SetNull)
-  children        User[]     @relation("ParentChildren")
-  foodLogs        FoodLog[]  @relation("UserLogs")
-  loggedEntries   FoodLog[]  @relation("LoggedBy")
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id           String     @id @default(cuid())
+  username     String     @unique
+  name         String
+  passwordHash String
+  role         String     @default("CHILD") // PARENT | CHILD
+  age          Int?
+  dailyLimitG  Float      @default(25)
+  familyId     String?
+  family       Family?    @relation(fields: [familyId], references: [id])
+  logs         FoodLog[]
+  createdAt    DateTime   @default(now())
+}
+
+model Family {
+  id        String   @id @default(cuid())
+  name      String
+  invitePin String   @unique
+  members   User[]
+  createdAt DateTime @default(now())
 }
 
 model FoodItem {
-  id                 String    @id @default(cuid())
-  name               String    @unique
-  category           String
-  sugarPer100g       Float
-  defaultServingUnit String    @default("potong")
-  gramsPerUnit       Float     @default(50)
-  foodLogs           FoodLog[]
-  createdAt          DateTime  @default(now())
+  id           String    @id @default(cuid())
+  name         String
+  category     String    // PACKAGED | HOMEMADE | SNACK | DRINK | FRUIT | SWEETENER
+  sugarType    String    @default("ADDED") // ADDED (gula tambahan) | NATURAL_FRUIT (gula alami buah utuh)
+  servingLabel String    // Satuan URT utama (misal: "1 kotak (125 ml)", "1 buah sedang (100 g)")
+  sugarGrams   Float     // Gram gula pada satuan utama
+  portions     String    @default("[]") // JSON opsi takaran spesifik per item (ptg kcl/sdg/bsr, sdt/sdm, mgk, dll)
+  sourceRef    String    @default("URT Kemenkes RI / TKPI") // Referensi validasi (BPOM / TKPI / Permenkes)
+  isCustom     Boolean   @default(false)
+  logs         FoodLog[]
+  createdAt    DateTime  @default(now())
 }
 
 model FoodLog {
-  id             String    @id @default(cuid())
-  userId         String
-  user           User      @relation("UserLogs", fields: [userId], references: [id], onDelete: Cascade)
-  loggedById     String
-  loggedBy       User      @relation("LoggedBy", fields: [loggedById], references: [id], onDelete: Cascade)
-  foodItemId     String?
-  foodItem       FoodItem? @relation(fields: [foodItemId], references: [id], onDelete: SetNull)
-  foodName       String
-  isPackaged     Boolean   @default(false)
-  portionUnit    String
-  portionSize    String    @default("sedang")
-  portionAmount  Float
-  estimatedGrams Float
-  sugarGrams     Float
-  consumedAt     DateTime  @default(now())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodItemId  String?
+  foodItem    FoodItem? @relation(fields: [foodItemId], references: [id], onDelete: SetNull)
+  customName  String?
+  portionUnit String    @default("1 porsi")
+  servings    Float     @default(1)
+  sugarGrams  Float     // Total gula (gram)
+  sugarType   String    @default("ADDED") // ADDED | NATURAL_FRUIT
+  mealTime    String    @default("SNACK") // BREAKFAST | LUNCH | DINNER | SNACK
+  loggedAt    DateTime  @default(now())
 }
