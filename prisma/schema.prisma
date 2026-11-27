@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String     @id @default(cuid())
+  username        String     @unique
+  name            String
+  passwordHash    String
+  role            String     @default("CHILDREN")
+  dailySugarLimit Float      @default(25.0)
+  avatarColor     String     @default("#00B4A6")
+  parentId        String?
+  parent          User?      @relation("ParentChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children        User[]     @relation("ParentChildren")
+  foodLogs        FoodLog[]  @relation("UserLogs")
+  loggedEntries   FoodLog[]  @relation("LoggedBy")
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model FoodItem {
+  id                 String    @id @default(cuid())
+  name               String    @unique
+  category           String
+  sugarPer100g       Float
+  defaultServingUnit String    @default("potong")
+  gramsPerUnit       Float     @default(50)
+  foodLogs           FoodLog[]
+  createdAt          DateTime  @default(now())
+}
+
+model FoodLog {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation("UserLogs", fields: [userId], references: [id], onDelete: Cascade)
+  loggedById     String
+  loggedBy       User      @relation("LoggedBy", fields: [loggedById], references: [id], onDelete: Cascade)
+  foodItemId     String?
+  foodItem       FoodItem? @relation(fields: [foodItemId], references: [id], onDelete: SetNull)
+  foodName       String
+  isPackaged     Boolean   @default(false)
+  portionUnit    String
+  portionSize    String    @default("sedang")
+  portionAmount  Float
+  estimatedGrams Float
+  sugarGrams     Float
+  consumedAt     DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
